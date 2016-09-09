@@ -10,17 +10,37 @@
 #' @param mig The migration rate
 #' @param surv The survival rate at the original population bottleneck
 #' @param litter The litter size at each generation
+#' @param pops Specify the method for generating f0 in surrounding populations.
+#' Choosing \code{pops = "same"} gives neighbouring populations with the same starting frequency.
+#' Choosing \code{pops = "flip50"} gives neighbouring populations where allele frequencies are flipped between 0.5 and 1,
+#' such that if f0 = 0.55, in neighbouring populations it will be given f0 = 0.95.
+#' Choosing \code{pops = "flip100"} gives neighbouring populations with allele frequencies flipped between 0 and 1,
+#' such that if f0 = 0.55, neighbouring populations will be given f0 = 0.45.
+#' Choosing either \code{pops = "fixed"} or \code{pops = "absent"} will set the alleles to be strictly fixed or absent in the neighbouring populations.
+#' @param sd The variability of allele frequencies in neighbouring populations around the central population.
+#'
+#' @details Starting with the initial population size, which is equal across all populations,
+#' all populations are subject to the same bottleneck with survival probability as given in the argument \code{surv}.
+#' Populations are grown exponentially until reaching \code{Nt}, and despite the given litter-size,
+#' only the appropriate number will be allowed to breed at each generation.
+#'
+#' By default, all neighbouring populations will be given the same initial frequency as the central population.
+#' These can be varied around this value on the logit scale using the parameter \code{sd}.
+#' Choosing values such as \code{sd < 0.5} will give moderate variability around the starting frequency,
+#' whilst values near one will clearly spread the allele frequencies more widely across the entire range.
+#' Extreme values such as \code{sd = 100} will give alleles which are effectively either fixed or absent in the neighbouring populations with equal probability.
+#'
 #'
 #' @return A list with components \code{ft} and \code{nEff}.
-#' These denote the final allele frequency, and the effective populations sizes at each geenration respectively.
+#' These denote the final allele frequency, and the effective populations sizes at each generation respectively.
 #'
 #' @examples
-#' simDrift(f0 = 0.8, N0 = 100, Nt = 200, t = 10, n = 6, mig = 0.01, surv = 0.1, litter= 6)
+#' test <- simDrift(f0 = 0.8, N0 = 100, Nt = 200, t = 10, n = 6, mig = 0.01, surv = 0.1, litter= 6)
 #'
 #' @import magrittr
 #'
 #' @export
-simDrift <- function(f0, N0, Nt, t, n, mig, surv, litter, ...){
+simDrift <- function(f0, N0, Nt, t, n, mig, surv, litter, pops = c("same", "flip50", "flip100", "fixed", "absent"), sd = 0, ...){
 
   # Convert all to integers where required
   N0 <- as.integer(N0)
@@ -36,9 +56,37 @@ simDrift <- function(f0, N0, Nt, t, n, mig, surv, litter, ...){
   stopifnot(c(mig >= 0, mig < 1)) # Zero migration is acceptable
   stopifnot(c(surv > 0, surv <= 1)) # 100% survival is aceptable if there is no bottleneck
   stopifnot(litter >= 3) # Litters must be greater than 2 for population growth
+  stopifnot(pops %in% c("same", "flip50", "flip100", "fixed", "absent")) # Only valid settings
+  if (missing(pops)) pops <- "same"
+  if (length(pops) > 1) {
+    message("More than one value provided for the variable pops. Only the first value will be used")
+    pops <- pops[1]
+  }
+  stopifnot(sd >= 0)
+
+  # Assuming all is good, get into the function
+  logit <- binomial()$linkfun
+  inv.logit <- binomial()$linkinv
+
+  # Set the starting frequencies
+  if (pops == "same"){
+    other_f0 <- rnorm(n - 1, logit(f0), sd) %>% inv.logit
+  }
+  if (pops == "flip50"){
+    other_f0 <- rnorm(n - 1, logit(1.5 - f0), sd) %>% inv.logit
+  }
+  if (pops == "flip100"){
+    other_f0 <- rnorm(n - 1, logit(1 - f0), sd) %>% inv.logit
+  }
+  if (pops == "fixed") other_f0 <- rep(1, n - 1)
+  if (pops == "absent") other_f0 <- rep(0, n - 1)
+  f0 <- c(f0, other_f0)
 
   # Simulate the starting populations
-  pop0 <- replicate(n, rbinom(2*N0, 2, 1 - f0), simplify = FALSE)
+  pop0 <- lapply(f0, function(x){
+    rbinom(n = 2*N0, size = 2, prob = 1 - x)
+  })
+
   # Introduce the bottleneck
   keep <- replicate(n, as.logical(rbinom(2*N0, 1, surv)), simplify = FALSE)
   pop0 <- mapply(function(x, y){x[y]}, x = pop0, y = keep, SIMPLIFY = FALSE)

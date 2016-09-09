@@ -4,7 +4,8 @@
 \alias{simDrift}
 \title{Simulate Drift}
 \usage{
-simDrift(f0, N0, Nt, t, n, mig, surv, litter, ...)
+simDrift(f0, N0, Nt, t, n, mig, surv, litter, pops = c("same", "flip50",
+  "flip100", "fixed", "absent"), sd = 0, ...)
 }
 \arguments{
 \item{f0}{The allele frqeuency pre-bottleneck}
@@ -22,16 +23,38 @@ simDrift(f0, N0, Nt, t, n, mig, surv, litter, ...)
 \item{surv}{The survival rate at the original population bottleneck}
 
 \item{litter}{The litter size at each generation}
+
+\item{pops}{Specify the method for generating f0 in surrounding populations.
+Choosing \code{pops = "same"} gives neighbouring populations with the same starting frequency.
+Choosing \code{pops = "flip50"} gives neighbouring populations where allele frequencies are flipped between 0.5 and 1,
+such that if f0 = 0.55, in neighbouring populations it will be given f0 = 0.95.
+Choosing \code{pops = "flip100"} gives neighbouring populations with allele frequencies flipped between 0 and 1,
+such that if f0 = 0.55, neighbouring populations will be given f0 = 0.45.
+Choosing either \code{pops = "fixed"} or \code{pops = "absent"} will set the alleles to be strictly fixed or absent in the neighbouring populations.}
+
+\item{sd}{The variability of allele frequencies in neighbouring populations around the central population.}
 }
 \value{
 A list with components \code{ft} and \code{nEff}.
-These denote the final allele frequency, and the effective populations sizes at each geenration respectively.
+These denote the final allele frequency, and the effective populations sizes at each generation respectively.
 }
 \description{
 Simulate drift across a number of populations and generations, for a single allele
 }
+\details{
+Starting with the initial population size, which is equal across all populations,
+all populations are subject to the same bottleneck with survival probability as given in the argument \code{surv}.
+Populations are grown exponentially until reaching \code{Nt}, and despite the given litter-size,
+only the appropriate number will be allowed to breed at each generation.
+
+By default, all neighbouring populations will be given the same initial frequency as the central population.
+These can be varied around this value on the logit scale using the parameter \code{sd}.
+Choosing values such as \code{sd < 0.5} will give moderate variability around the starting frequency,
+whilst values near one will clearly spread the allele frequencies more widely across the entire range.
+Extreme values such as \code{sd = 100} will give alleles which are effectively either fixed or absent in the neighbouring populations with equal probability.
+}
 \examples{
-simDrift(f0 = 0.8, N0 = 100, Nt = 200, t = 10, n = 6, mig = 0.01, surv = 0.1, litter= 6)
+test <- simDrift(f0 = 0.8, N0 = 100, Nt = 200, t = 10, n = 6, mig = 0.01, surv = 0.1, litter= 6)
 
 }
 
