@@ -4,29 +4,33 @@
 \alias{migrate}
 \title{Simulate unbounded migration}
 \usage{
-migrate(pops, rate, method = "random")
+migrate(pops, rate)
 }
 \arguments{
 \item{pops}{A list of populations with each containing a vector of individuals as 0, 2 or 2}
 
 \item{rate}{The upper bound on the migration rate}
-
-\item{method}{Does migration happen randomly between populations (method = "random")
-or in a circular direction (method = "circular").}
 }
 \value{
-A list of populations with the identical structure as supplied in pops.
+A list of populations with the same length as supplied in pops.
 The rate of shuffling between populations will have been performed according
-to the migration rate and method specified in the function call.
+to the migration rate specified in the function call.
+Population sizes may vary slightly post migration
 }
 \description{
 Simulate migration between populations.
 Equal migration between populations is assumed
 The size of the first population is used to determine the number of migrants
 }
+\details{
+To model migration, the first population is taken as the centre of a circle.
+All populations are in contact with this population, but only have two neighbours.
+Migration can thus occur between the central population and all others, but only between neighbours in the outer ring.
+This is done by assigning probabilites of population membership to each individual based on it's original population.
+}
 \examples{
-# Simulate 3 populations
-pops <- lapply(c(10, 12, 14), function(x){sample(0:2, x, replace = TRUE)})
+# Simulate 5 populations
+pops <- lapply(c(10, 12, 14, 10, 10), function(x){sample(0:2, x, replace = TRUE)})
 names(pops) <- paste0("Pop", LETTERS[seq_along(pops)])
 # Add names so the individuals can be tracked
 pops <- sapply(names(pops),
@@ -36,8 +40,7 @@ pops <- sapply(names(pops),
                  pop},
                simplify = FALSE)
 # Now perform simulated migration
-migrate(pops, 0.1, "random")
-migrate(pops, 0.1, "circular")
+migrate(pops, 0.1)
 
 }
 
