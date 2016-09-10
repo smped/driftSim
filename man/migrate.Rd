@@ -32,13 +32,6 @@ This is done by assigning probabilites of population membership to each individu
 # Simulate 5 populations
 pops <- lapply(c(10, 12, 14, 10, 10), function(x){sample(0:2, x, replace = TRUE)})
 names(pops) <- paste0("Pop", LETTERS[seq_along(pops)])
-# Add names so the individuals can be tracked
-pops <- sapply(names(pops),
-               function(x){
-                 pop <- pops[[x]]
-                 names(pop) <- paste(x, letters[seq_along(pop)], sep=":")
-                 pop},
-               simplify = FALSE)
 # Now perform simulated migration
 migrate(pops, 0.1)
 
