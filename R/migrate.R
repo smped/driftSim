@@ -1,4 +1,4 @@
-#' @title Simulate unbounded migration
+#' @title Simulate migration
 #'
 #' @description Simulate migration between populations.
 #' Equal migration between populations is assumed
@@ -42,36 +42,39 @@ migrate <- function(pops, rate){
   # Collect the initial population info for each individual into a data.frame
   nPops <- length(pops)
   popDf <- lapply(seq_along(pops), function(x){
-    data_frame(AlleleCount = pops[[x]], SourcePop = paste0("Pop", x))
+    dplyr::data_frame(AlleleCount = pops[[x]],
+               SourcePop = paste0("Pop", x))
   }) %>%
-    bind_rows
+    dplyr::bind_rows()
 
-  # Assign migration probablities for individuals in population 1
+  # Assign migration probablities for individuals
   nIndividuals <- nrow(popDf)
   probs <- matrix(0, nrow = nIndividuals, ncol = nPops)
-  probs[,1] <- c(rate/3, 1 - rate)[grepl("Pop1",popDf$SourcePop) + 1] # Probabilities of membership in Pop1
+  # Probabilities of membership for Pop1
+  probs[, 1] <- rate / 3
+  probs[popDf$SourcePop == "Pop1", 1] <- 1 - rate
+  probs[popDf$SourcePop == "Pop1", 2:nPops] <- rate/(nPops - 1)
+  neighbourMat <- cbind(curPop = paste0("Pop", 2:nPops),
+                        rightPop  = paste0("Pop", 2:nPops)[c(2:(nPops -1),1)],
+                        leftPop = paste0("Pop", 2:nPops)[c((nPops - 1),1:(nPops -2))])
   # Assign migration probabilities for other populations
   for (i in 2:nPops){
     curPop <- paste0("Pop", i)
-    neighbours <- paste0("Pop",
-                         c(ifelse(i == 2, nPops, i - 1),
-                           ifelse(i < nPops, i + 1, 2)))
+    neighbours <- neighbourMat[i - 1, c("rightPop", "leftPop")]
     probs[popDf$SourcePop == curPop, i] <- 1 - rate
-    probs[popDf$SourcePop == "Pop1", i] <- rate/(nPops - 1)
     probs[popDf$SourcePop %in% neighbours, i] <- rate / 3
   }
 
-  # Assign post-migration population membership for each allele
+  # Assign post-migration population membership for each individual
   postPops <- apply(probs, MARGIN = 1, FUN = function(x){
     sample.int(n = nPops, size = 1, prob = x)
   })
 
-  out <- popDf %>%
-    mutate(PostPop = postPops) %>%
+  # Produce the output
+  popDf %>%
+    dplyr::mutate(PostPop = postPops) %>%
     split(f = .$PostPop) %>%
-    lapply(extract2, "AlleleCount") %>%
-    set_names(names(pops))
-
-  out
+    lapply(magrittr::extract2, "AlleleCount") %>%
+    magrittr::set_names(names(pops))
 
 }

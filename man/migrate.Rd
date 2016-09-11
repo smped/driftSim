@@ -2,7 +2,7 @@
 % Please edit documentation in R/migrate.R
 \name{migrate}
 \alias{migrate}
-\title{Simulate unbounded migration}
+\title{Simulate migration}
 \usage{
 migrate(pops, rate)
 }
