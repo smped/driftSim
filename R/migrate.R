@@ -54,9 +54,12 @@ migrate <- function(pops, rate){
   probs[, 1] <- rate / 3
   probs[popDf$SourcePop == "Pop1", 1] <- 1 - rate
   probs[popDf$SourcePop == "Pop1", 2:nPops] <- rate/(nPops - 1)
+  #
+  # THIS SHOULD BE DEFINED ONCE IN THE MAIN FUNCTION
   neighbourMat <- cbind(curPop = paste0("Pop", 2:nPops),
                         rightPop  = paste0("Pop", 2:nPops)[c(2:(nPops -1),1)],
                         leftPop = paste0("Pop", 2:nPops)[c((nPops - 1),1:(nPops -2))])
+  # MOVE THIS TO CPP
   # Assign migration probabilities for other populations
   for (i in 2:nPops){
     curPop <- paste0("Pop", i)
@@ -69,6 +72,7 @@ migrate <- function(pops, rate){
   postPops <- apply(probs, MARGIN = 1, FUN = function(x){
     sample.int(n = nPops, size = 1, prob = x)
   })
+  # END CPP CHUNK
 
   # Produce the output
   popDf %>%

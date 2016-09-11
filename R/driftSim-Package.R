@@ -5,7 +5,7 @@
 #'@author Steve Pederson <stephen.pederson@adelaide.edu.au>
 #'@docType package
 #'@name driftSim
-#'@importFrom Rcpp evalCpp
 #'@useDynLib driftSim
+#'@importFrom Rcpp sourceCpp
 #'@aliases driftSim driftSim-package
 NULL

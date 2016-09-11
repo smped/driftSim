@@ -113,6 +113,7 @@ simDrift <- function(f0, N0, Nt, t, n, mig, surv, litter, pops = c("same", "flip
     # Breed at every iteration
     progeny[[i]] <- lapply(pairs[[i]],
                            function(x){
+                             # Write this line in C++
                              apply(x, 1, breed, litter = litter) %>% as.vector()
                            })
 
