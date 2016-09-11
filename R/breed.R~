@@ -15,15 +15,20 @@
 #' pop <-matrix(sample(c(0, 1, 2), 100, TRUE), ncol = 2)
 #' progeny <- apply(pop, 1, breed)
 #'
+#' @import Rcpp
+#'
 #' @export
-breed <- function(pair, litter = 6){
+Rcpp::cppFunction('
+  // Write the function
+  NumericVector breed(IntegerVector pair, int litter){
 
-  pair <- as.integer(pair)
-  stopifnot(any(pair %in% c(0, 1, 2)))
-  stopifnot(length(pair) ==2)
-  litter <- as.integer(litter)
-  m <- rbinom(litter, 1, pair[1]/2) # Gametes from individual 1, nominally m
-  f <- rbinom(litter, 1, pair[2]/2) # Gametes from individual 2, nominally f
-  m + f # Progeny
-
-}
+    // Check the pair only has two members
+    int n = pair.size();
+    // Check all values are with 0, 1 or 2
+    if (n != 2) stop("Pairs can only be specified with 2 values");
+    if (max(pair) > 2 || min(pair) < 0) stop("Alleles can only be between 0 and 2");
+    NumericVector m = rbinom(litter, 1, pair[0]/2.0);
+    NumericVector f = rbinom(litter, 1, pair[1]/2.0);
+    return m + f;
+    }
+            ')
