@@ -6,6 +6,7 @@
 #'
 #' @param pops A list of populations with each containing a vector of individuals as 0, 2 or 2
 #' @param rate The upper bound on the migration rate
+#' @param migrationProbs A data.frame with columns of probabilities for migration
 #'
 #' @return A list of populations with the same length as supplied in pops.
 #' The rate of shuffling between populations will have been performed according
@@ -18,65 +19,51 @@
 #' This is done by assigning probabilites of population membership to each individual based on it's original population.
 #'
 #' @examples
-#' # Simulate 5 populations
 #' pops <- lapply(c(10, 12, 14, 10, 10), function(x){sample(0:2, x, replace = TRUE)})
-#' names(pops) <- paste0("Pop", LETTERS[seq_along(pops)])
+#' n <- length(pops)
+#' mig <- 0.1
+#' migDf <- data.frame(Pop1 = c(1 - mig, rep(mig/(n-1), n - 1)))
+#' for (i in 2:n){
+#'   migDf[[i]] <- rep(0, n)
+#'   migDf[[i]][1] <- mig/3
+#'   migDf[[i]][i] <- 1- mig
+#'   migDf[[i]][ifelse(i + 1 > n, 2, i + 1)] <- mig/3
+#'   migDf[[i]][ifelse(i - 1 < 2, n, i - 1)] <- mig/3
+#' }
+#' names(migDf) <- paste0("Pop", 1:n)
 #' # Now perform simulated migration
-#' migrate(pops, 0.1)
+#' migrate(pops, mig, migDf)
 #'
 #' @import dplyr
 #' @import magrittr
 #'
 #' @export
-migrate <- function(pops, rate){
+migrate <- function(pops, rate, migrationProbs){
 
   stopifnot(is.list(pops))
-  stopifnot(length(pops) > 1)
+  stopifnot(is.data.frame(migrationProbs))
+  nPops <- length(pops)
+  stopifnot(nPops > 1)
+  stopifnot(length(migrationProbs) == nPops)
   stopifnot(vapply(pops, is.vector, logical(1)))
   stopifnot(rate >= 0, rate <= 1)
 
   # Check each population only has 0, 1, 2 values
-  all012 <- vapply(pops, function(x){all(x %in% 0:2)}, logical(1))
-  stopifnot(all012)
+  stopifnot(unlist(pops) %in% 0:2)
 
   # Collect the initial population info for each individual into a data.frame
-  nPops <- length(pops)
   popDf <- lapply(seq_along(pops), function(x){
     dplyr::data_frame(AlleleCount = pops[[x]],
                SourcePop = paste0("Pop", x))
   }) %>%
-    dplyr::bind_rows()
+    dplyr::bind_rows() %>%
+    dplyr::mutate(PostPop = vapply(SourcePop,
+                                   function(x){ # Sample the final population given the migrationProbs
+                                     sample.int(nPops, 1, prob = migrationProbs[[x]])
+                                   },
+                                   integer(1)))
 
-  # Assign migration probablities for individuals
-  nIndividuals <- nrow(popDf)
-  probs <- matrix(0, nrow = nIndividuals, ncol = nPops)
-  # Probabilities of membership for Pop1
-  probs[, 1] <- rate / 3
-  probs[popDf$SourcePop == "Pop1", 1] <- 1 - rate
-  probs[popDf$SourcePop == "Pop1", 2:nPops] <- rate/(nPops - 1)
-  #
-  # THIS SHOULD BE DEFINED ONCE IN THE MAIN FUNCTION
-  neighbourMat <- cbind(curPop = paste0("Pop", 2:nPops),
-                        rightPop  = paste0("Pop", 2:nPops)[c(2:(nPops -1),1)],
-                        leftPop = paste0("Pop", 2:nPops)[c((nPops - 1),1:(nPops -2))])
-  # MOVE THIS TO CPP
-  # Assign migration probabilities for other populations
-  for (i in 2:nPops){
-    curPop <- paste0("Pop", i)
-    neighbours <- neighbourMat[i - 1, c("rightPop", "leftPop")]
-    probs[popDf$SourcePop == curPop, i] <- 1 - rate
-    probs[popDf$SourcePop %in% neighbours, i] <- rate / 3
-  }
-
-  # Assign post-migration population membership for each individual
-  postPops <- apply(probs, MARGIN = 1, FUN = function(x){
-    sample.int(n = nPops, size = 1, prob = x)
-  })
-  # END CPP CHUNK
-
-  # Produce the output
   popDf %>%
-    dplyr::mutate(PostPop = postPops) %>%
     split(f = .$PostPop) %>%
     lapply(magrittr::extract2, "AlleleCount") %>%
     magrittr::set_names(names(pops))

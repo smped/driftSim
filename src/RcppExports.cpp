@@ -17,3 +17,15 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// breedInPairs
+NumericVector breedInPairs(IntegerMatrix pairs, int litter);
+RcppExport SEXP driftSim_breedInPairs(SEXP pairsSEXP, SEXP litterSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< IntegerMatrix >::type pairs(pairsSEXP);
+    Rcpp::traits::input_parameter< int >::type litter(litterSEXP);
+    __result = Rcpp::wrap(breedInPairs(pairs, litter));
+    return __result;
+END_RCPP
+}

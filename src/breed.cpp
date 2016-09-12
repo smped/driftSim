@@ -12,11 +12,12 @@ using namespace Rcpp;
 //' @return The alleles of progeny, also using the 0, 1 or 2 representation
 //'
 //' @examples
-//' breed(c(1, 1))
+//' breed(c(1, 1), litter = 6)
 //'
 //' # Sampling a population
-//' pop <-matrix(sample(c(0, 1, 2), 100, TRUE), ncol = 2)
-//' progeny <- apply(pop, 1, breed)
+//' pop <-matrix(sample(c(0, 1, 2), 10, TRUE), ncol = 2)
+//' progeny <- apply(pop, 1, breed, litter = 6)
+//' @export
 // [[Rcpp::export]]
 NumericVector breed(IntegerVector pair, int litter){
 

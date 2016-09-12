@@ -82,6 +82,9 @@ simDrift <- function(f0, N0, Nt, t, n, mig, surv, litter, pops = c("same", "flip
   if (pops == "absent") other_f0 <- rep(0, n - 1)
   f0 <- c(f0, other_f0)
 
+  # Build a data.frame of migration probabilities
+  migDf <- setMigProbs(n, mig)
+
   # Simulate the starting populations
   pop0 <- lapply(f0, function(x){
     rbinom(n = 2*N0, size = 2, prob = 1 - x)
@@ -106,24 +109,20 @@ simDrift <- function(f0, N0, Nt, t, n, mig, surv, litter, pops = c("same", "flip
   # Form into breeding pairs.
   # If an odd number of individuals is in a population, assume polygamy and use recursion
   pairs <- vector("list", t + 1)
-  progeny <- vector("list", t)
+  # progeny <- vector("list", t)
   pairs[[1]] <- lapply(pop0, function(x){suppressWarnings(matrix(x, ncol = 2))})
 
   for (i in 1:t){
     # Breed at every iteration
-    progeny[[i]] <- lapply(pairs[[i]],
-                           function(x){
-                             # Write this line in C++
-                             apply(x, 1, breed, litter = litter) %>% as.vector()
-                           })
+    progeny <- lapply(pairs[[i]], breedInPairs, litter = litter)
 
     # Allow migration pre-survival
-    progeny[[i]] <- migrate(progeny[[i]], mig, ...)
+    progeny <- migrate(progeny, mig, migDf)
 
     # Check population sizes are appropriate
     nKeep <- lapply(genSizes, magrittr::extract, i)
     popVsKeep <- mapply(function(pop, n){length(pop) > 2*n},
-                        pop = progeny[[i]],
+                        pop = progeny,
                         n = nKeep,
                         SIMPLIFY = FALSE)
     if (any(!unlist(popVsKeep))) stop("Breeding rates unable to give required final population size")
@@ -134,14 +133,40 @@ simDrift <- function(f0, N0, Nt, t, n, mig, surv, litter, pops = c("same", "flip
       ind <- sample.int(nrow(pairMat), n)
       pairMat[ind,]
     },
-    pop = progeny[[i]],
+    pop = progeny,
     n = nKeep,
     SIMPLIFY = FALSE)
 
   }
 
   # Return population 1 as the population of interest
-  list(ft = mean(2 - progeny[[t]][[1]])/2,
+  list(ft = mean(2 - progeny[[1]])/2,
        nEff = genSizes[[1]])
 
 }
+
+setMigProbs <- function(n, mig){
+  pops <- paste0("Pop", 2:n)
+  neighbours <- cbind(left = pops[c(2:(n-1), 1)],
+                           right = pops[c(n-1, 1:(n-2))],
+                           const = "Pop1")
+  rownames(neighbours) <- paste0(pops)
+  out <- data.frame(
+    Pop1 = c(1-mig, rep(mig/n, n-1)),
+    row.names = paste0("Pop", 1:n)
+  )
+
+  out <- cbind(out,
+               vapply(pops,
+                      function(x){
+                        p <- rep(0, n)
+                        p[rownames(out) == x] <- mig
+                        p[rownames(out) %in% neighbours[x,]] <- mig/3
+                        p
+                      },
+                      numeric(n)))
+
+  out
+}
+
+

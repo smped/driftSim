@@ -12,12 +12,35 @@
 #' @return The alleles of progeny, also using the 0, 1 or 2 representation
 #'
 #' @examples
-#' breed(c(1, 1))
+#' breed(c(1, 1), litter = 6)
 #'
 #' # Sampling a population
-#' pop <-matrix(sample(c(0, 1, 2), 100, TRUE), ncol = 2)
-#' progeny <- apply(pop, 1, breed)
+#' pop <-matrix(sample(c(0, 1, 2), 10, TRUE), ncol = 2)
+#' progeny <- apply(pop, 1, breed, litter = 6)
+#' @export
 breed <- function(pair, litter) {
     .Call('driftSim_breed', PACKAGE = 'driftSim', pair, litter)
+}
+
+#' @title  Simulate the progeny
+#'
+#' @description Simulates the progeny for a set of breeding pairs, to a specified litter size
+#'
+#' @param pairs A two-column matrix of alleles.
+#' Alleles must be represented as 0, 1 or 2.
+#' @param litter The litter size from the breeding pair.
+#'
+#' @return The alleles of progeny, also using the 0, 1 or 2 representation. Returned as a vector
+#'
+#' @examples
+#' breed(c(1, 1), litter = 6)
+#'
+#' # Sampling a population
+#' pop <-matrix(sample(c(0, 1, 2), 10, TRUE), ncol = 2)
+#' apply(pop, 1, breed, litter = 6)
+#' breedInPairs(pop, litter = 6)
+#' @export
+breedInPairs <- function(pairs, litter) {
+    .Call('driftSim_breedInPairs', PACKAGE = 'driftSim', pairs, litter)
 }
 

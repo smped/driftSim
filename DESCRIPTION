@@ -5,8 +5,8 @@ Version: 0.0.1
 Authors@R: person("Steve", "Pederson", email = "stephen.pederson@adelaide.edu.au", role = "cre")
 Description: Specifically simulates drift with a given Effective Population Size
     and a Bottleneck at the first generation
-Imports: Rcpp
-LinkingTo: Rcpp
 License: GPL-2
 LazyData: TRUE
 RoxygenNote: 5.0.1
+LinkingTo: Rcpp
+Imports: Rcpp
