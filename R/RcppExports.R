@@ -44,3 +44,20 @@ breedInPairs <- function(pairs, litter) {
     .Call('driftSim_breedInPairs', PACKAGE = 'driftSim', pairs, litter)
 }
 
+#' @title Set migration Probabilities
+#'
+#' @description Defines the migration rate using a radial model with Pop1 as the central population.
+#' All others form a ring aorund this population.
+#'
+#' @param n The number of populations
+#' @param mig The migration rate
+#'
+#' @return A matrix with migration probabilities
+#'
+#' @examples
+#' setMigProbs(6, 0.1)
+#' @export
+setMigProbs <- function(n, mig) {
+    .Call('driftSim_setMigProbs', PACKAGE = 'driftSim', n, mig)
+}
+

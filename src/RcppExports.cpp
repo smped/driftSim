@@ -29,3 +29,15 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// setMigProbs
+NumericMatrix setMigProbs(int n, double mig);
+RcppExport SEXP driftSim_setMigProbs(SEXP nSEXP, SEXP migSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< double >::type mig(migSEXP);
+    __result = Rcpp::wrap(setMigProbs(n, mig));
+    return __result;
+END_RCPP
+}

@@ -83,7 +83,7 @@ simDrift <- function(f0, N0, Nt, t, n, mig, surv, litter, pops = c("same", "flip
   f0 <- c(f0, other_f0)
 
   # Build a data.frame of migration probabilities
-  migDf <- setMigProbs(n, mig)
+  migDf <- as.data.frame(setMigProbs(n, mig))
 
   # Simulate the starting populations
   pop0 <- lapply(f0, function(x){
@@ -144,29 +144,3 @@ simDrift <- function(f0, N0, Nt, t, n, mig, surv, litter, pops = c("same", "flip
        nEff = genSizes[[1]])
 
 }
-
-setMigProbs <- function(n, mig){
-  pops <- paste0("Pop", 2:n)
-  neighbours <- cbind(left = pops[c(2:(n-1), 1)],
-                           right = pops[c(n-1, 1:(n-2))],
-                           const = "Pop1")
-  rownames(neighbours) <- paste0(pops)
-  out <- data.frame(
-    Pop1 = c(1-mig, rep(mig/n, n-1)),
-    row.names = paste0("Pop", 1:n)
-  )
-
-  out <- cbind(out,
-               vapply(pops,
-                      function(x){
-                        p <- rep(0, n)
-                        p[rownames(out) == x] <- mig
-                        p[rownames(out) %in% neighbours[x,]] <- mig/3
-                        p
-                      },
-                      numeric(n)))
-
-  out
-}
-
-

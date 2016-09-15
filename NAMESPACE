@@ -3,6 +3,7 @@
 export(breed)
 export(breedInPairs)
 export(migrate)
+export(setMigProbs)
 export(simDrift)
 import(dplyr)
 import(magrittr)
