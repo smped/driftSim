@@ -93,13 +93,15 @@ simDrift <- function(f0, N0, Nt, t, n, mig, surv, litter,
 
   # Simulate the starting populations
   pop0 <- lapply(f0, function(x){
-    rbinom(n = 2*N0, size = 2, prob = 1 - x)
+    # The initial population genotypes
+    gt <- rbinom(n = 2*N0, size = 2, prob = 1 - x)
+    # The sizes post- bottleneck
+    sz <- rbinom(1, length(gt), surv)
+    # Select the survivors based on any selective advantage
+    sample(gt, sz, prob = genoProbs[gt+1])
+
   })
 
-  # Introduce the bottleneck
-  keep <- replicate(n, as.logical(rbinom(2*N0, 1, surv)), simplify = FALSE)
-  pop0 <- mapply(function(x, y){x[y]}, x = pop0, y = keep, SIMPLIFY = FALSE)
-  pop0
   # Check that all populations are viable (i.e have >= 2 members)
   viable <- vapply(pop0, function(x){length(x)>=2}, logical(1))
   if (any(!viable)) stop("One or more populations are too small to be viable post-bottleneck")
@@ -115,7 +117,6 @@ simDrift <- function(f0, N0, Nt, t, n, mig, surv, litter,
   # Form into breeding pairs.
   # If an odd number of individuals is in a population, assume polygamy and use recursion
   pairs <- vector("list", t + 1)
-  # progeny <- vector("list", t)
   pairs[[1]] <- lapply(pop0, function(x){suppressWarnings(matrix(x, ncol = 2))})
 
   for (i in 1:t){
