@@ -18,6 +18,10 @@
 #' such that if f0 = 0.55, neighbouring populations will be given f0 = 0.45.
 #' Choosing either \code{pops = "fixed"} or \code{pops = "absent"} will set the alleles to be strictly fixed or absent in the neighbouring populations.
 #' @param sd The variability of allele frequencies in neighbouring populations around the central population.
+#' @param genoProbs A vector of length three indicating the selective advantage for each genotype.
+#' Should be specified as relative probabilities and defaults to the vector \code{c(1, 1, 1)},
+#' giving an equal probability of selection to each genotype.
+#' By way of example, a 20\% fitness increase for a homozygous reference allele could be given the vector \code{c(1.2, 1, 1)}.
 #'
 #' @details Starting with the initial population size, which is equal across all populations,
 #' all populations are subject to the same bottleneck with survival probability as given in the argument \code{surv}.
@@ -40,7 +44,8 @@
 #' @import magrittr
 #'
 #' @export
-simDrift <- function(f0, N0, Nt, t, n, mig, surv, litter, pops = c("same", "flip50", "flip100", "fixed", "absent"), sd = 0, ...){
+simDrift <- function(f0, N0, Nt, t, n, mig, surv, litter,
+                     pops = c("same", "flip50", "flip100", "fixed", "absent"), sd = 0, genoProbs = c(1, 1, 1), ...){
 
   # Convert all to integers where required
   N0 <- as.integer(N0)
@@ -63,6 +68,7 @@ simDrift <- function(f0, N0, Nt, t, n, mig, surv, litter, pops = c("same", "flip
     pops <- pops[1]
   }
   stopifnot(sd >= 0)
+  stopifnot(length(genoProbs) == 3, is.numeric(genoProbs))
 
   # Assuming all is good, get into the function
   logit <- binomial()$linkfun
@@ -127,15 +133,16 @@ simDrift <- function(f0, N0, Nt, t, n, mig, surv, litter, pops = c("same", "flip
                         SIMPLIFY = FALSE)
     if (any(!unlist(popVsKeep))) stop("Breeding rates unable to give required final population size")
 
-    # Select the population for breeding pairs in the next generation
-    pairs[[i + 1]] <- mapply(function(pop, n){
-      pairMat <- suppressWarnings(matrix(pop, ncol = 2))
-      ind <- sample.int(nrow(pairMat), n)
-      pairMat[ind,]
+    # Select the breeding population for the next generation
+    pairs[[i+1]] <- mapply(function(pop, n){
+      matrix(sample(x = pop,
+                    size = 2*n,
+                    prob = genoProbs[pop + 1]), ncol = 2)
     },
     pop = progeny,
     n = nKeep,
     SIMPLIFY = FALSE)
+
 
   }
 

@@ -5,7 +5,7 @@
 \title{Simulate Drift}
 \usage{
 simDrift(f0, N0, Nt, t, n, mig, surv, litter, pops = c("same", "flip50",
-  "flip100", "fixed", "absent"), sd = 0, ...)
+  "flip100", "fixed", "absent"), sd = 0, genoProbs = c(1, 1, 1), ...)
 }
 \arguments{
 \item{f0}{The allele frqeuency pre-bottleneck}
@@ -33,6 +33,11 @@ such that if f0 = 0.55, neighbouring populations will be given f0 = 0.45.
 Choosing either \code{pops = "fixed"} or \code{pops = "absent"} will set the alleles to be strictly fixed or absent in the neighbouring populations.}
 
 \item{sd}{The variability of allele frequencies in neighbouring populations around the central population.}
+
+\item{genoProbs}{A vector of length three indicating the selective advantage for each genotype.
+Should be specified as relative probabilities and defaults to the vector \code{c(1, 1, 1)},
+giving an equal probability of selection to each genotype.
+By way of example, a 20\% fitness increase for a homozygous reference allele could be given the vector \code{c(1.2, 1, 1)}.}
 }
 \value{
 A list with components \code{ft} and \code{nEff}.
